@@ -1,0 +1,8 @@
+ID,cust_fname,cust_lname,check_in_date,check_out_date,check_in_time,check_out_time,ServiceID
+100,Kobe,Bryant,5/20/2016,5/27/2016,10:00 AM,2:00 PM,102
+102,Lebron ,James,5/22/2016,5/28/2016,10:00 AM,2:00 PM,130
+103,Michael,Jordan,5/24/2016,5/29/2016,10:00 AM,2:00 PM,145
+104,Rafael,Nadal,5/26/2016,5/30/2016,10:00 AM,2:00 PM,150
+105,Shaquille,O'neal,5/28/2016,5/31/2016,10:00 AM,2:00 PM,160
+106,James,Cameron,5/30/2016,6/1/2016,10:00 AM,2:00 PM,170
+107,Roger,Federer,6/1/2016,6/7/2016,10:00 AM,2:00 PM,180
