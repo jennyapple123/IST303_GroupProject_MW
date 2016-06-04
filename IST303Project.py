@@ -16,19 +16,16 @@ class customer:
 
     def __init__(self, input_id):
         self.input_id = input_id
+        for lab, row in guest_list.iterrows():
+            if self.input_id == lab:
+                self.check_in = datetime.strptime(row['check_in_date'] + " " + row['check_in_time'], '%m/%d/%y %I:%M %p')
+                self.check_out = datetime.strptime(row['check_out_date'] + " " + row['check_out_time'], '%m/%d/%y %I:%M %p')
 
     def check_for_cust(self):
         """ This function checks if a customer ID is valid
         """
         for lab, row in guest_list.iterrows():
             if self.input_id == lab:
-                #print str(self.input_id) + " is a valid ID"
-                self.check_in_date = row['check_in_date']
-                self.check_out_date = row['check_out_date']
-                self.check_in_time = row['check_in_time']
-                self.check_out_time = row['check_out_time']
-                self.check_in = datetime.strptime(row['check_in_date'] + " " + row['check_in_time'], '%m/%d/%y %I:%M %p')
-                self.check_out = datetime.strptime(row['check_out_date'] + " " + row['check_out_time'], '%m/%d/%y %I:%M %p')
                 return True
         #print str(self.input_id) + " is NOT a valid ID"
         return False
@@ -37,24 +34,63 @@ class customer:
 Reservations = []
 
 class Service(customer):
-    def __init__(self, input_id):
+    def reserve(self, input_id, Input_Date, Input_Time, length):
         self.input_id = input_id
-
-    def reserve(self, Input_Date, Input_Time, length):
         self.StartTime = datetime.strptime(Input_Date + " " +  Input_Time, '%m/%d/%y %I:%M %p')
         self.length = length
         self.EndTime = self.StartTime + timedelta(minutes = length)
         Reservations.append(self)
 
 class Facial_norm(Service):
-    def __init__(self, input_id):
-        self.input_id = input_id
+    def __init__(self):
+        self.price = 2.0
         self.service_id = 0
 
 class Facial_col(Service):
-    def __init__(self, input_id):
-        self.input_id = input_id
+    def __init__(self):
+        self.price = 2.0
         self.service_id = 1
+
+class Massage_swe(Service):
+    def __init__(self):
+        self.price = 3.0
+        self.service_id = 2
+
+class Massage_shi(Service):
+    def __init__(self):
+        self.price = 3.0
+        self.service_id = 3
+
+class Massage_deep(Service):
+    def __init__(self):
+        self.price = 3.0
+        self.service_id = 4
+
+class Mineral_bath(Service):
+    def __init__(self):
+        self.price = 2.5
+        self.service_id = 5
+
+class Spec_hot_stone(Service):
+    def __init__(self):
+        self.price = 3.5
+        self.service_id = 6
+
+class Spec_sug_scrub(Service):
+    def __init__(self):
+        self.price = 3.5
+        self.service_id = 7
+
+class Spec_herb_wrap(Service):
+    def __init__(self):
+        self.price = 3.5
+        self.service_id = 8
+
+class Spec_bot_wrap(Service):
+    def __init__(self):
+        self.price = 3.5
+        self.service_id = 9
+
 
 
 class AvailableService():
@@ -65,7 +101,8 @@ class AvailableService():
         self.CloseTime = datetime.strptime("8:00 PM", '%I:%M %p')
     
     def Check(self):
-        ServiceList = ["Facial Norm", "Facial Collagen"]
+        ServiceList = ["Facial_norm", "Facial_col", "Massage_swe", "Massage_shi", "Massage_deep",
+                       "Mineral_bath", "Spec_hot_stone", "Spec_sug_scrub", "Spec_herb_wrap", "Spec_bot_wrap"]
         NotAvailable = []
         if self.ReserveTime > self.CloseTime or self.ReserveTime < self.OpenTime:
             print("Not in the range of OpenTime and CloseTime")
@@ -74,25 +111,129 @@ class AvailableService():
         for EachResevation in Reservations:
             if EachResevation.StartTime - timedelta(minutes = EachResevation.length) < self.ReserveDateTime or self.ReserveDateTime < EachResevation.EndTime:
                 NotAvailable.append(EachResevation.service_id)
-        print(NotAvailable)
-        for i in range(0, 2, 1):
+       
+        for i in range(0, 9, 1):
             if i not in NotAvailable:
                 print(ServiceList[i])
 
 
+class AvailableTimeForService():
+    def __init__(self, Start_Date, Start_Time, End_Date, End_Time, InputService, length, OpenTime, CloseTime):
+        self.OpenTime = datetime.strptime("8:00 AM", '%I:%M %p').time()
+        self.CloseTime = datetime.strptime("8:00 PM", '%I:%M %p').time()
+        self.StartDateTime = datetime.strptime(Start_Date + " " +  Start_Time, '%m/%d/%y %I:%M %p')
+        self.EndDateTime = datetime.strptime(End_Date + " " +  End_Time, '%m/%d/%y %I:%M %p')
+        self.length = length
+        #self.length = eval(InputService).length
+        #self.step = timedelta(minutes = self.length)
+        self.step = timedelta(minutes = 30)
 
+        StartTimeList = []
+        NotAvailableTime = []
+
+        while  self.StartDateTime < self.EndDateTime:
+            if self.StartDateTime.time() < self.CloseTime and \
+               self.StartDateTime.time() >= self.OpenTime:
+                StartTimeList.append(self.StartDateTime)
+            self.StartDateTime += self.step
+
+        #print(Reservations[0].StartTime.strftime('%m/%d/%y %I:%M %p') + " " + str(Reservations[0].service_id))
+        #print(Reservations[1].StartTime.strftime('%m/%d/%y %I:%M %p') + " " + str(Reservations[1].service_id))
+
+
+        # Record all the not available time slots
+        for EachResevation in Reservations:
+            if EachResevation.service_id == eval(InputService).service_id and EachResevation.StartTime not in NotAvailableTime:
+                NotAvailableTime.append(EachResevation.StartTime)
+                if length == 60 or 90:
+                    NotAvailableTime.append(EachResevation.StartTime - timedelta(minutes = 30))
+                    NotAvailableTime.append(EachResevation.StartTime + timedelta(minutes = 30))
+                if length == 90:
+                    NotAvailableTime.append(EachResevation.StartTime - timedelta(minutes = 60))          
+                    NotAvailableTime.append(EachResevation.StartTime + timedelta(minutes = 60))
+
+        #print(NotAvailableTime)
+
+        # Remove all the unavailable time slots
+        for i in StartTimeList:
+            if i not in NotAvailableTime:
+                #print("\n")
+                EndTime = i + timedelta(minutes = length)
+                print(i.strftime('%m/%d/%y %I:%M %p') + " -- " + EndTime.strftime('%I:%M %p'))  
+
+
+class AvailableTimeForCustomer(customer):
+
+    def __init__(self, Input_ID):
+        CustomerCase = customer(Input_ID)
+        self.OpenTime = datetime.strptime("8:00 AM", '%I:%M %p').time()
+        self.CloseTime = datetime.strptime("8:00 PM", '%I:%M %p').time()
+        self.ID = Input_ID
+        now = datetime.now()
+        self.StartDateTime = datetime(now.year, now.month, now.day, now.hour, now.minute)
+        self.EndDateTime = CustomerCase.check_out
+        self.step = timedelta(minutes = 30)
+
+        StartTimeList = []
+        NotAvailableTime = []
+
+        # Round up the current time
+        if self.StartDateTime.minute <= 30:
+            NewMin = 30
+        else:
+            NewMin = 60
+        self.StartDateTime = self.StartDateTime.replace(minute = 0)
+        self.StartDateTime += timedelta(minutes = NewMin)
+
+        while  self.StartDateTime < self.EndDateTime:
+            if self.StartDateTime.time() < self.CloseTime and \
+            self.StartDateTime.time() >= self.OpenTime:
+                StartTimeList.append(self.StartDateTime)
+            self.StartDateTime += self.step
+
+        # Record all the not available time slots only for him
+        for EachResevation in Reservations:
+            if EachResevation.input_id == self.ID:
+                NotAvailableTime.append(EachResevation.StartTime)
+
+
+        # Remove all the unavailable time slots
+        for i in StartTimeList:
+            if i not in NotAvailableTime:
+                EndTime = i + timedelta(minutes = 30)
+                print(i.strftime('%m/%d/%y %I:%M %p') + " -- " + EndTime.strftime('%I:%M %p'))  
+
+
+
+class charge(Service):
+    def __init__(self, Input_ID):
+        SumBill = 0
+        CustomerCase = customer(Input_ID)
+        
+        for EachResevation in Reservations:
+            if EachResevation.input_id == Input_ID:
+                SumBill += EachResevation.length * EachResevation.price
+        print ("Customer " + str(Input_ID) + " billing is " + str(SumBill) + " dollars")
 
 
 CustomerInstance = customer(102)
-FN1 = Facial_norm(102)
-FN1.reserve("5/22/16", "8:00 AM", 60)
-print(Reservations[0].EndTime)
+FN1 = Facial_norm()
+FN1.reserve(102, "6/4/16", "8:00 AM", 60)
 
-AS = AvailableService("5/22/16", "8:00 AM", "8:00 AM", "8:00 PM")
-AS.Check()
+#AS = AvailableService("5/22/16", "8:00 AM", "8:00 AM", "8:00 PM")
+#AS.Check()
 
-#print "\n Cusotmer102 8:00 AM Massage"
-#CustomerInstance.validate_service("8:00 AM", "Massage")
+print("############# AvailableTimeForService")
+#ATFS = AvailableTimeForService("5/22/16", "8:00 AM", "5/23/16", "8:00 PM", "Massage_swe()", 60, "8:00 AM", "8:00 PM")
+print("############# AvailableTimeForService for Facial_norm")
+FN2 = Facial_norm()
+FN2.reserve(102, "6/5/16", "9:00 AM", 30)
+#ATFS = AvailableTimeForService("5/22/16", "8:00 AM", "5/23/16", "8:00 PM", "Facial_norm()", 60, "8:00 AM", "8:00 PM")
+print("\n ############# AvailableTimeForCustomer")
+#ATFC = AvailableTimeForCustomer(102)
+
+bill = charge(102)
+
 
 
 ############ Interactive inputs
