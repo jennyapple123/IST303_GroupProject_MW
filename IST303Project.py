@@ -1,11 +1,15 @@
-#from Tkinter import *
-#root = Tk()
-#root.mainloop()
+from tkinter import *
+#import tkinter as tk
 from datetime import *
 import csv
 import pandas as pd
 import numpy as np
 import unittest
+import tkinter.simpledialog
+#import tkinter.messagebox
+
+
+
 
 
 guest_list = pd.read_csv("IST 303 GuestList.csv", index_col = 0)
@@ -27,7 +31,10 @@ class customer:
         for lab, row in guest_list.iterrows():
             if self.input_id == lab:
                 return True
+                messagebox.showinfo("Result", "Valid Customer ID!\n")
+
         #print str(self.input_id) + " is NOT a valid ID"
+        messagebox.showinfo("Result", "Invalid Customer ID!\n")
         return False
 
     
@@ -40,6 +47,11 @@ class Service(customer):
         self.length = length
         self.EndTime = self.StartTime + timedelta(minutes = length)
         Reservations.append(self)
+        
+        messagebox.showinfo("Result", "Reservations Completed!\n")
+
+        #popup_result = Tk()
+        #popup_result.title("Reservations Completed!")
 
 class Facial_norm(Service):
     def __init__(self):
@@ -94,7 +106,7 @@ class Spec_bot_wrap(Service):
 
 
 class AvailableService():
-    def __init__(self, Input_Date, Input_Time, OpenTime, CloseTime):
+    def __init__(self, Input_Date, Input_Time):
         self.ReserveDateTime = datetime.strptime(Input_Date + " " +  Input_Time, '%m/%d/%y %I:%M %p')
         self.ReserveTime = datetime.strptime(Input_Time, '%I:%M %p')
         self.OpenTime = datetime.strptime("8:00 AM", '%I:%M %p')
@@ -105,6 +117,7 @@ class AvailableService():
                        "Mineral_bath", "Spec_hot_stone", "Spec_sug_scrub", "Spec_herb_wrap", "Spec_bot_wrap"]
         NotAvailable = []
         if self.ReserveTime > self.CloseTime or self.ReserveTime < self.OpenTime:
+            messagebox.showinfo("Result", "Not in the range of OpenTime and CloseTime\n")
             print("Not in the range of OpenTime and CloseTime")
             return 
     
@@ -112,9 +125,9 @@ class AvailableService():
             if EachResevation.StartTime - timedelta(minutes = EachResevation.length) < self.ReserveDateTime or self.ReserveDateTime < EachResevation.EndTime:
                 NotAvailable.append(EachResevation.service_id)
        
-        for i in range(0, 9, 1):
-            if i not in NotAvailable:
-                print(ServiceList[i])
+        printout = [ServiceList[i] for i in range(0, 9, 1) if i not in NotAvailable]
+        messagebox.showinfo("Result", '\n'.join(printout))
+    
 
 
 class AvailableTimeForService():
@@ -162,7 +175,7 @@ class AvailableTimeForService():
                 print(i.strftime('%m/%d/%y %I:%M %p') + " -- " + EndTime.strftime('%I:%M %p'))  
 
 
-class AvailableTimeForCustomer(customer):
+class AvailableTimeForCustomer():
 
     def __init__(self, Input_ID):
         CustomerCase = customer(Input_ID)
@@ -216,13 +229,10 @@ class charge(Service):
         print ("Customer " + str(Input_ID) + " billing is " + str(SumBill) + " dollars")
 
 
-CustomerInstance = customer(102)
-FN1 = Facial_norm()
-FN1.reserve(102, "6/4/16", "8:00 AM", 60)
 
-#AS = AvailableService("5/22/16", "8:00 AM", "8:00 AM", "8:00 PM")
-#AS.Check()
 
+
+"""
 print("############# AvailableTimeForService")
 #ATFS = AvailableTimeForService("5/22/16", "8:00 AM", "5/23/16", "8:00 PM", "Massage_swe()", 60, "8:00 AM", "8:00 PM")
 print("############# AvailableTimeForService for Facial_norm")
@@ -233,7 +243,7 @@ print("\n ############# AvailableTimeForCustomer")
 #ATFC = AvailableTimeForCustomer(102)
 
 bill = charge(102)
-
+"""
 
 
 ############ Interactive inputs
@@ -277,3 +287,53 @@ CustomerInstance.start_reserving("8:30 AM", "Facial_norm")
 print "\n After reserving, Cusotmer102 8:30 AM Facial_norm"
 CustomerInstance.validate_service("8:30 AM", "Facial_norm")
 """
+
+
+
+
+
+class App:
+
+    def __init__(self, master):
+
+        frame = Frame(master)
+        frame.pack()
+
+        self.button = Button(
+            frame, text="QUIT", fg="red", command=frame.quit
+            )
+        self.button.pack(side=LEFT)
+
+        self.hi_there = Button(frame, text="Reserve", command = self.reserveKT)
+        self.hi_there.pack(side=LEFT)
+
+        self.hi_there = Button(frame, text="DislayAvailableService", command = self.DislayAvailableService)
+        self.hi_there.pack(side=LEFT)
+
+
+    def reserveKT(self):
+        # Input the information
+        input_id_value = simpledialog.askinteger("test", "Please enter customer ID: ")
+        Input_Date_value = simpledialog.askstring("test","Please enter date for reservation: ") 
+        Input_Time_value = simpledialog.askstring("test","Please enter time for reservation: ")
+        InputService_value = simpledialog.askstring("test","Which services do you want?")
+        length_value = simpledialog.askinteger("test", "For how long?")
+
+        #CustomerInstance = customer(input_id)
+        ServiceObject = eval(InputService_value)
+        ServiceObject.reserve(input_id_value, Input_Date_value, Input_Time_value, length_value)
+
+
+    def DislayAvailableService(self):
+       # Input the information
+        Input_Date_value = simpledialog.askstring("test","Please enter date: ") 
+        Input_StartTime_value = simpledialog.askstring("test","Please enter start time: ")
+        
+        AS = AvailableService(Input_Date_value, Input_StartTime_value)
+        AS.Check()
+
+root = Tk()
+app = App(root)
+root.geometry('500x500')
+root.mainloop()
+root.destroy() # optional; see description below
