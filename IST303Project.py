@@ -30,12 +30,13 @@ class customer:
         """
         for lab, row in guest_list.iterrows():
             if self.input_id == lab:
-                return True
                 messagebox.showinfo("Result", "Valid Customer ID!\n")
+                return True
 
         #print str(self.input_id) + " is NOT a valid ID"
         messagebox.showinfo("Result", "Invalid Customer ID!\n")
         return False
+
 
     
 Reservations = []
@@ -57,53 +58,106 @@ class Facial_norm(Service):
     def __init__(self):
         self.price = 2.0
         self.service_id = 0
+        self.service_name = "Facial Normal"
 
 class Facial_col(Service):
     def __init__(self):
         self.price = 2.0
         self.service_id = 1
+        self.service_name = "Facial Collagen"
 
 class Massage_swe(Service):
     def __init__(self):
         self.price = 3.0
         self.service_id = 2
+        self.service_name = "Massage Swedish"
 
 class Massage_shi(Service):
     def __init__(self):
         self.price = 3.0
         self.service_id = 3
+        self.service_name = "Massage shiats"
 
 class Massage_deep(Service):
     def __init__(self):
         self.price = 3.0
         self.service_id = 4
+        self.service_name = "Massage deep tissue"
 
 class Mineral_bath(Service):
     def __init__(self):
         self.price = 2.5
         self.service_id = 5
+        self.service_name = "Mineral Bath"
 
 class Spec_hot_stone(Service):
     def __init__(self):
         self.price = 3.5
         self.service_id = 6
+        self.service_name = "Specialty Hot Stone"
 
 class Spec_sug_scrub(Service):
     def __init__(self):
         self.price = 3.5
         self.service_id = 7
+        self.service_name = "Specialty Sugar Scrub"
 
 class Spec_herb_wrap(Service):
     def __init__(self):
         self.price = 3.5
         self.service_id = 8
+        self.service_name = "Specialty Herbal Body Wrap"
 
 class Spec_bot_wrap(Service):
     def __init__(self):
         self.price = 3.5
         self.service_id = 9
+        self.service_name = "Specialty botanical mud wrap"
 
+class LookupReservation_Cust():
+    def __init__(self, Input_ID):
+        self.ID = Input_ID
 
+        NotAvailableTimeList = []
+
+        # Record all the not available time slots only for him
+        for EachResevation in Reservations:
+            if EachResevation.input_id == self.ID:
+                NotAvailableTimeList.append(EachResevation.StartTime.strftime('%m/%d/%y %I:%M %p') + " " \
+                    + EachResevation.service_name)
+        messagebox.showinfo("Result", '\n'.join(NotAvailableTimeList))
+
+class CheckServiceAvailability():
+    def __init__(self, Input_Date, Input_Time, InputService):
+        self.ReserveDateTime = datetime.strptime(Input_Date + " " +  Input_Time, '%m/%d/%y %I:%M %p')
+        self.ReserveTime = datetime.strptime(Input_Time, '%I:%M %p')
+        self.OpenTime = datetime.strptime("8:00 AM", '%I:%M %p')
+        self.CloseTime = datetime.strptime("8:00 PM", '%I:%M %p')
+    
+        ServiceList = ["Facial_norm", "Facial_col", "Massage_swe", "Massage_shi", "Massage_deep",
+                       "Mineral_bath", "Spec_hot_stone", "Spec_sug_scrub", "Spec_herb_wrap", "Spec_bot_wrap"]
+        NotAvailable = []
+
+        # Check if target time slot is in the range of open time and close time
+        if self.ReserveTime > self.CloseTime or self.ReserveTime < self.OpenTime:
+            messagebox.showinfo("Result", "Not in the range of OpenTime and CloseTime\n")
+            print("Not in the range of OpenTime and CloseTime")
+            return 
+    
+        # Store all the reserved time slot to NotAvailable
+        for EachResevation in Reservations:
+            if EachResevation.StartTime - timedelta(minutes = EachResevation.length) < self.ReserveDateTime or self.ReserveDateTime < EachResevation.EndTime:
+                NotAvailable.append(EachResevation.service_id)
+
+        print(NotAvailable)
+
+        # Check if target service is in the list of reserved service list
+        for i in NotAvailable:
+            if i == eval(InputService).service_id:
+                messagebox.showinfo("Result", "Not available!")
+                return 
+        messagebox.showinfo("Result", "Available!")
+                    
 
 class AvailableService():
     def __init__(self, Input_Date, Input_Time):
@@ -116,17 +170,22 @@ class AvailableService():
         ServiceList = ["Facial_norm", "Facial_col", "Massage_swe", "Massage_shi", "Massage_deep",
                        "Mineral_bath", "Spec_hot_stone", "Spec_sug_scrub", "Spec_herb_wrap", "Spec_bot_wrap"]
         NotAvailable = []
+
+        # Check if target time slot is in the range of open time and close time
         if self.ReserveTime > self.CloseTime or self.ReserveTime < self.OpenTime:
             messagebox.showinfo("Result", "Not in the range of OpenTime and CloseTime\n")
             print("Not in the range of OpenTime and CloseTime")
             return 
     
+        # Store all the reserved time slot to NotAvailable
         for EachResevation in Reservations:
             if EachResevation.StartTime - timedelta(minutes = EachResevation.length) < self.ReserveDateTime or self.ReserveDateTime < EachResevation.EndTime:
                 NotAvailable.append(EachResevation.service_id)
        
         printout = [ServiceList[i] for i in range(0, 9, 1) if i not in NotAvailable]
         messagebox.showinfo("Result", '\n'.join(printout))
+
+        return NotAvailable
     
 
 
@@ -304,12 +363,47 @@ class App:
             )
         self.button.pack(side=LEFT)
 
-        self.hi_there = Button(frame, text="Reserve", command = self.reserveKT)
-        self.hi_there.pack(side=LEFT)
+        self.check_for_cust = Button(frame, text="Validate Customer ID", command = self.check_for_cust_Button)
+        self.check_for_cust.pack(side=LEFT)
 
-        self.hi_there = Button(frame, text="DislayAvailableService", command = self.DislayAvailableService)
-        self.hi_there.pack(side=LEFT)
+        self.LookupReservation_Cust = Button(frame, text="Look up reservations for customer", command = self.LookUpReservation_Cust_Button)
+        self.LookupReservation_Cust.pack(side=LEFT)
 
+        self.CheckServiceAvailability = Button(frame, text="Check Service Availability", command = self.CheckServiceAvailability_Button)
+        self.CheckServiceAvailability.pack(side=LEFT)
+
+        self.reserve = Button(frame, text="Reserve", command = self.reserveKT)
+        self.reserve.pack(side=LEFT)
+
+        self.DislayAvailableService = Button(frame, text="For a Given Datetime, Dislay Available Service", command = self.DislayAvailableService)
+        self.DislayAvailableService.pack(side=LEFT)
+
+
+
+
+
+
+
+
+    def check_for_cust_Button(self):
+        # Input the information
+        input_id_value = simpledialog.askinteger("test", "Please enter customer ID: ")
+        
+        CustomerInstance = customer(input_id_value)
+        CustomerInstance.check_for_cust()
+
+    def LookUpReservation_Cust_Button(self):
+        # Input the information
+        input_id_value = simpledialog.askinteger("test", "Please enter customer ID: ")   
+        
+        LookupInstance = LookupReservation_Cust(input_id_value)
+
+    def CheckServiceAvailability_Button(self):
+        Input_Date_value = simpledialog.askstring("test","Please enter date for reservation: ") 
+        Input_Time_value = simpledialog.askstring("test","Please enter time for reservation: ")
+        InputService_value = simpledialog.askstring("test","Which services do you want?")
+    
+        CheckServiceAvailabilityInstance = CheckServiceAvailability(Input_Date_value, Input_Time_value, InputService_value)
 
     def reserveKT(self):
         # Input the information
@@ -319,10 +413,8 @@ class App:
         InputService_value = simpledialog.askstring("test","Which services do you want?")
         length_value = simpledialog.askinteger("test", "For how long?")
 
-        #CustomerInstance = customer(input_id)
         ServiceObject = eval(InputService_value)
         ServiceObject.reserve(input_id_value, Input_Date_value, Input_Time_value, length_value)
-
 
     def DislayAvailableService(self):
        # Input the information
@@ -331,6 +423,8 @@ class App:
         
         AS = AvailableService(Input_Date_value, Input_StartTime_value)
         AS.Check()
+
+
 
 root = Tk()
 app = App(root)
