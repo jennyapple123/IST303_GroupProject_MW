@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import unittest
 import tkinter.simpledialog
+from PIL import ImageTk, Image
 #import tkinter.messagebox
 
 
@@ -42,14 +43,29 @@ class customer:
 Reservations = []
 
 class Service(customer):
-    def reserve(self, input_id, Input_Date, Input_Time, length):
+    def reserve(self, input_id, Input_Date, Input_Time, length, InputService):
         self.input_id = input_id
         self.StartTime = datetime.strptime(Input_Date + " " +  Input_Time, '%m/%d/%y %I:%M %p')
         self.length = length
         self.EndTime = self.StartTime + timedelta(minutes = length)
-        Reservations.append(self)
-        
-        messagebox.showinfo("Result", "Reservations Completed!\n")
+
+        # Get the customer's check-in and check-out time 
+        CustomerCase = customer(input_id)
+        self.ID = input_id
+        self.check_in = CustomerCase.check_in
+        self.check_out = CustomerCase.check_out
+
+        # Make sure that the reservation time is in the range of check-in & check-out time
+        if self.StartTime < self.check_in or self.EndTime > self.check_out:
+            messagebox.showinfo("Result", "Error: Datetime out of range of check-in & check-out time\n")
+            return
+
+        # Make sure no reservations overlap
+        CheckServiceAvailabilityCase = CheckServiceAvailability(Input_Date, Input_Time, InputService)
+        if CheckServiceAvailabilityCase.Check():
+            Reservations.append(self)
+            messagebox.showinfo("Result", "Reservations Completed!\n")
+
 
         #popup_result = Tk()
         #popup_result.title("Reservations Completed!")
@@ -132,17 +148,17 @@ class CheckServiceAvailability():
         self.ReserveDateTime = datetime.strptime(Input_Date + " " +  Input_Time, '%m/%d/%y %I:%M %p')
         self.ReserveTime = datetime.strptime(Input_Time, '%I:%M %p')
         self.OpenTime = datetime.strptime("8:00 AM", '%I:%M %p')
-        self.CloseTime = datetime.strptime("8:00 PM", '%I:%M %p')
+        self.CloseTime = datetime.strptime("8:00 PM", '%I:%M %p') 
     
+    def Check(self):
         ServiceList = ["Facial_norm", "Facial_col", "Massage_swe", "Massage_shi", "Massage_deep",
                        "Mineral_bath", "Spec_hot_stone", "Spec_sug_scrub", "Spec_herb_wrap", "Spec_bot_wrap"]
         NotAvailable = []
 
         # Check if target time slot is in the range of open time and close time
         if self.ReserveTime > self.CloseTime or self.ReserveTime < self.OpenTime:
-            messagebox.showinfo("Result", "Not in the range of OpenTime and CloseTime\n")
-            print("Not in the range of OpenTime and CloseTime")
-            return 
+            messagebox.showinfo("Result", "Error: Not in the range of OpenTime and CloseTime\n")
+            return False
     
         # Store all the reserved time slot to NotAvailable
         for EachResevation in Reservations:
@@ -157,6 +173,7 @@ class CheckServiceAvailability():
                 messagebox.showinfo("Result", "Not available!")
                 return 
         messagebox.showinfo("Result", "Available!")
+        return True
                     
 
 class AvailableService():
@@ -190,7 +207,7 @@ class AvailableService():
 
 
 class AvailableTimeForService():
-    def __init__(self, Start_Date, Start_Time, End_Date, End_Time, InputService, length, OpenTime, CloseTime):
+    def __init__(self, Start_Date, Start_Time, End_Date, End_Time, InputService, length):
         self.OpenTime = datetime.strptime("8:00 AM", '%I:%M %p').time()
         self.CloseTime = datetime.strptime("8:00 PM", '%I:%M %p').time()
         self.StartDateTime = datetime.strptime(Start_Date + " " +  Start_Time, '%m/%d/%y %I:%M %p')
@@ -227,11 +244,8 @@ class AvailableTimeForService():
         #print(NotAvailableTime)
 
         # Remove all the unavailable time slots
-        for i in StartTimeList:
-            if i not in NotAvailableTime:
-                #print("\n")
-                EndTime = i + timedelta(minutes = length)
-                print(i.strftime('%m/%d/%y %I:%M %p') + " -- " + EndTime.strftime('%I:%M %p'))  
+        printout = [i.strftime('%m/%d/%y %I:%M %p') + " -- " + (i + timedelta(minutes = length)).strftime('%I:%M %p') for i in StartTimeList if i not in NotAvailableTime]
+        messagebox.showinfo("Result", '\n'.join(printout))
 
 
 class AvailableTimeForCustomer():
@@ -268,12 +282,9 @@ class AvailableTimeForCustomer():
             if EachResevation.input_id == self.ID:
                 NotAvailableTime.append(EachResevation.StartTime)
 
-
         # Remove all the unavailable time slots
-        for i in StartTimeList:
-            if i not in NotAvailableTime:
-                EndTime = i + timedelta(minutes = 30)
-                print(i.strftime('%m/%d/%y %I:%M %p') + " -- " + EndTime.strftime('%I:%M %p'))  
+        printout = [i.strftime('%m/%d/%y %I:%M %p') + " -- " + (i + timedelta(minutes = 30)).strftime('%I:%M %p') for i in StartTimeList if i not in NotAvailableTime]
+        messagebox.showinfo("Result", '\n'.join(printout))
 
 
 
@@ -285,7 +296,8 @@ class charge(Service):
         for EachResevation in Reservations:
             if EachResevation.input_id == Input_ID:
                 SumBill += EachResevation.length * EachResevation.price
-        print ("Customer " + str(Input_ID) + " billing is " + str(SumBill) + " dollars")
+        messagebox.showinfo("Result", "Customer " + str(Input_ID) + " billing is " + str(SumBill) + " dollars")
+        #print ("Customer " + str(Input_ID) + " billing is " + str(SumBill) + " dollars")
 
 
 
@@ -351,6 +363,15 @@ CustomerInstance.validate_service("8:30 AM", "Facial_norm")
 
 
 
+
+
+
+
+
+
+
+
+
 class App:
 
     def __init__(self, master):
@@ -358,30 +379,41 @@ class App:
         frame = Frame(master)
         frame.pack()
 
-        self.button = Button(
-            frame, text="QUIT", fg="red", command=frame.quit
-            )
-        self.button.pack(side=LEFT)
+
 
         self.check_for_cust = Button(frame, text="Validate Customer ID", command = self.check_for_cust_Button)
-        self.check_for_cust.pack(side=LEFT)
+        self.check_for_cust.pack(fill = X, padx = 10)
 
         self.LookupReservation_Cust = Button(frame, text="Look up reservations for customer", command = self.LookUpReservation_Cust_Button)
-        self.LookupReservation_Cust.pack(side=LEFT)
+        self.LookupReservation_Cust.pack(fill = X, padx = 10, pady=10)
 
         self.CheckServiceAvailability = Button(frame, text="Check Service Availability", command = self.CheckServiceAvailability_Button)
-        self.CheckServiceAvailability.pack(side=LEFT)
+        self.CheckServiceAvailability.pack(fill = X, padx = 10,pady=10)
 
-        self.reserve = Button(frame, text="Reserve", command = self.reserveKT)
-        self.reserve.pack(side=LEFT)
+        self.reserve = Button(frame, text="Reserve", command = self.reserve_Button)
+        self.reserve.pack(fill = X, padx = 10, pady=10)
 
-        self.DislayAvailableService = Button(frame, text="For a Given Datetime, Dislay Available Service", command = self.DislayAvailableService)
-        self.DislayAvailableService.pack(side=LEFT)
+        self.charge = Button(frame, text="Billing", command = self.Charge_Button)
+        self.charge.pack(fill = X, padx = 10, pady=10)
+
+        self.DislayAvailableService = Button(frame, text="For a Given Datetime, Display Available Service", command = self.DislayAvailableService_Button)
+        self.DislayAvailableService.pack(fill = X, padx = 10,pady=10)
+
+        self.AvailableTimeForService = Button(frame, text="For a Given Service, Display Available Time", command = self.AvailableTimeForService_Button)
+        self.AvailableTimeForService.pack(fill = X, padx = 10,pady=10)
+
+        self.AvailableTimeForCustomer = Button(frame, text="For a Given Customer, Display Available Time", command = self.AvailableTimeForCustomer_Button)
+        self.AvailableTimeForCustomer.pack(fill = X, padx = 10,pady=10)
+
+        self.button = Button(frame, text="QUIT", fg="red", command=frame.quit)
+        self.button.pack(fill = X, padx = 10, pady=10)
 
 
 
+        #self.MainTitle()
 
-
+    #def MainTitle(self):
+    #    self.parent.title("SPA Reservation Page")
 
 
 
@@ -404,8 +436,9 @@ class App:
         InputService_value = simpledialog.askstring("test","Which services do you want?")
     
         CheckServiceAvailabilityInstance = CheckServiceAvailability(Input_Date_value, Input_Time_value, InputService_value)
+        CheckServiceAvailabilityInstance.Check()
 
-    def reserveKT(self):
+    def reserve_Button(self):
         # Input the information
         input_id_value = simpledialog.askinteger("test", "Please enter customer ID: ")
         Input_Date_value = simpledialog.askstring("test","Please enter date for reservation: ") 
@@ -414,9 +447,15 @@ class App:
         length_value = simpledialog.askinteger("test", "For how long?")
 
         ServiceObject = eval(InputService_value)
-        ServiceObject.reserve(input_id_value, Input_Date_value, Input_Time_value, length_value)
+        ServiceObject.reserve(input_id_value, Input_Date_value, Input_Time_value, length_value, InputService_value)
 
-    def DislayAvailableService(self):
+    def Charge_Button(self):
+        # Input the information
+        input_id_value = simpledialog.askinteger("test", "Please enter customer ID: ") 
+
+        ChargeInstance = charge(input_id_value)  
+        
+    def DislayAvailableService_Button(self):
        # Input the information
         Input_Date_value = simpledialog.askstring("test","Please enter date: ") 
         Input_StartTime_value = simpledialog.askstring("test","Please enter start time: ")
@@ -424,10 +463,37 @@ class App:
         AS = AvailableService(Input_Date_value, Input_StartTime_value)
         AS.Check()
 
+    def AvailableTimeForService_Button(self):
+        InputService_value = simpledialog.askstring("test","Which services do you want?")
+        Start_Date_value = simpledialog.askstring("test","Please enter start date: ") 
+        Start_Time_value = simpledialog.askstring("test","Please enter start time: ")
+        End_Date_value = simpledialog.askstring("test","Please enter end date: ") 
+        End_Time_value = simpledialog.askstring("test","Please enter end time: ")
+        length_value = simpledialog.askinteger("test", "For how long?")
+
+        AvailableTimeForServiceInstance = AvailableTimeForService(Start_Date_value, Start_Time_value,End_Date_value, End_Time_value, InputService_value, length_value)
 
 
-root = Tk()
+    def AvailableTimeForCustomer_Button(self):
+        # Input the information
+        input_id_value = simpledialog.askinteger("test", "Please enter customer ID: ") 
+
+        AvailableTimeForCustomerInstance = AvailableTimeForCustomer(input_id_value)
+
+
+
+
+
+
+root = Tk() 
 app = App(root)
-root.geometry('500x500')
+
+
+#image = Image.open("/Users/jennyapple/Desktop/IST303_GroupProject_MW/SPA_pic.jpg")
+#photo = ImageTk.PhotoImage(image)
+#panel = Label(root, image = photo)
+#panel.pack(side = "bottom", fill = "both", expand = "yes")
+
+root.geometry('823x381')
 root.mainloop()
 root.destroy() # optional; see description below
