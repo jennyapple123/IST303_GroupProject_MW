@@ -149,6 +149,7 @@ class CheckServiceAvailability():
         self.ReserveTime = datetime.strptime(Input_Time, '%I:%M %p')
         self.OpenTime = datetime.strptime("8:00 AM", '%I:%M %p')
         self.CloseTime = datetime.strptime("8:00 PM", '%I:%M %p') 
+        self.InputService = InputService
     
     def Check(self):
         ServiceList = ["Facial_norm", "Facial_col", "Massage_swe", "Massage_shi", "Massage_deep",
@@ -162,16 +163,16 @@ class CheckServiceAvailability():
     
         # Store all the reserved time slot to NotAvailable
         for EachResevation in Reservations:
-            if EachResevation.StartTime - timedelta(minutes = EachResevation.length) < self.ReserveDateTime or self.ReserveDateTime < EachResevation.EndTime:
+            if EachResevation.StartTime - timedelta(minutes = EachResevation.length) < self.ReserveDateTime and self.ReserveDateTime < EachResevation.EndTime:
                 NotAvailable.append(EachResevation.service_id)
 
         print(NotAvailable)
 
         # Check if target service is in the list of reserved service list
         for i in NotAvailable:
-            if i == eval(InputService).service_id:
+            if i == eval(self.InputService).service_id:
                 messagebox.showinfo("Result", "Not available!")
-                return 
+                return False
         messagebox.showinfo("Result", "Available!")
         return True
                     
@@ -437,6 +438,7 @@ class App:
     
         CheckServiceAvailabilityInstance = CheckServiceAvailability(Input_Date_value, Input_Time_value, InputService_value)
         CheckServiceAvailabilityInstance.Check()
+
 
     def reserve_Button(self):
         # Input the information
